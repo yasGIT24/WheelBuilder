@@ -8,24 +8,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Build wheels using manylinux
-        uses: pypa/cibuildwheel@v2.16.5
-        env:
-          CIBW_BUILD: "cp312-*"
-          CIBW_SKIP: "pp* *musllinux*"
-          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
-          CIBW_ARCHS_LINUX: "x86_64"
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}:/io \
+            quay.io/pypa/manylinux2014_x86_64 \
+            bash -c "
+              /opt/python/cp312-cp312/bin/pip install --upgrade pip &&
+              /opt/python/cp312-cp312/bin/pip wheel \
+                -r /io/requirements.txt \
+                -w /io/wheels &&
+              for whl in /io/wheels/*.whl; do
+                auditwheel repair \$whl -w /io/wheels/;
+              done
+            "
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: linux-wheels
-          path: wheelhouse/*.whl
+          path: wheels/*.whl
