@@ -1,0 +1,31 @@
+name: Build Linux Wheels
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build wheels using manylinux
+        uses: pypa/cibuildwheel@v2.16.5
+        env:
+          CIBW_BUILD: "cp312-*"
+          CIBW_SKIP: "pp* *musllinux*"
+          CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
+          CIBW_ARCHS_LINUX: "x86_64"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-wheels
+          path: wheelhouse/*.whl
